@@ -7,11 +7,9 @@ export class FileAnalyser {
     private transactions:Transaction[];
     private accounts:Account[];
 
-    constructor(file:string){
+    constructor(){
         this.transactions = [];
         this.accounts = [];
-        this.getTransactions(file);
-        console.log("Processed the transactions");
     }
 
     print_all(){
@@ -36,29 +34,55 @@ export class FileAnalyser {
         }
     }
 
-    getTransactions(file:string){
+    getTransactionsCSV(file:string){
         //split file into strings detailing the transactions
         var lines:string[] = file.split("\r\n");
         for (var f = 1;f<lines.length;f++) { //first line is field names
             var fields:string[] = lines[f].split(",");
             try{
                 var price:number = parseFloat(fields[4]);
-                if(isNaN(price)){
+                if(isNaN(price) && fields[4] != undefined){
                     console.log("Error: \'"+fields[4]+"\' is not a number");
                     throw null;
+                } else {
+                    if(fields[4] != undefined){
+                        this.transactions.push(new Transaction(
+                            fields[0],//date
+                            fields[1],//from
+                            fields[2],//to
+                            fields[3],//reason
+                            price//amount
+                        ));
+                    }
                 }
-                this.transactions.push(new Transaction(
-                    fields[0],//date
-                    fields[1],//from
-                    fields[2],//to
-                    fields[3],//reason
-                    price//amount
-                ));
             } catch(exception) {
                 console.log("Invalid data entry");
             }
         }
     }
+
+    getTransactionsJSON(files:Object[]) {
+        files.forEach(f => {
+            try {
+                if(f["Date"] == undefined ||
+                f["FromAccount"] == undefined || 
+                f["ToAccount"] == undefined ||
+                f["Narrative"] == undefined ||
+                f["Amount"] == undefined) throw null;
+                this.transactions.push(new Transaction(
+                    f["Date"],
+                    f["FromAccount"],
+                    f["ToAccount"],
+                    f["Narrative"],
+                    f["Amount"]
+                ));
+            }
+            catch(exception) {
+                console.log("Invalid data entry");
+            }
+        });
+    }
+
 
     getAccounts(){
         this.transactions.forEach(t => {

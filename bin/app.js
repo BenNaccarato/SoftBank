@@ -3,23 +3,25 @@
 var readline = require('readline');
 var FileAnalyser_1 = require('./FileAnalyser');
 var filename;
-var the_file;
+var fileType;
+var analyser = new FileAnalyser_1.FileAnalyser();
 //Read the file
 var rl = readline.createInterface(process.stdin, process.stdout);
 rl.question('Filename to read: ', function (input) {
-    try {
-        filename = input;
-        var fs = require('fs');
-        the_file = fs.readFileSync(filename, { encoding: 'utf8' });
-        console.log("Read the file");
+    filename = input;
+    fileType = filename.split(".")[1];
+    //interprets the file depending on its type
+    switch (fileType) {
+        case "json":
+            readJSON(filename);
+            break;
+        case "xml":
+            readXML(filename);
+            break;
+        default:
+            readCSV(filename);
     }
-    catch (exception) {
-        console.log("Failed to read the file. Exiting now");
-        rl.close();
-        process.exit();
-    }
-    //make an analyser object to interpret the csv file
-    var analyser = new FileAnalyser_1.FileAnalyser(the_file);
+    console.log("File successfully read");
     //Get the desired instruction
     rl.question('Input command: ', function (command) {
         if (command.substr(0, 5) == "List ") {
@@ -33,13 +35,40 @@ rl.question('Filename to read: ', function (input) {
         }
         else {
             console.log("Invalid command. Exiting now");
-            rl.close();
-            process.exit();
+            quit();
         }
         //close the program
         console.log("Exiting now");
-        rl.close();
-        process.exit();
+        quit();
     });
 });
+function readCSV(filename) {
+    try {
+        var fs = require('fs');
+        var the_file = fs.readFileSync(filename, { encoding: 'utf8' });
+        analyser.getTransactionsCSV(the_file);
+    }
+    catch (exception) {
+        console.log("Failed to read the file. Exiting now");
+        quit();
+    }
+}
+function readJSON(filename) {
+    try {
+        var fs = require('fs');
+        var the_file = fs.readFileSync(filename, { encoding: 'utf8' });
+        var the_objects = JSON.parse(the_file);
+        analyser.getTransactionsJSON(the_objects);
+    }
+    catch (exception) {
+        console.log("Failed to read the file. Exiting now");
+        quit();
+    }
+}
+function readXML(filename) {
+}
+function quit() {
+    rl.close();
+    process.exit();
+}
 //# sourceMappingURL=app.js.map
