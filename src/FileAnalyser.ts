@@ -69,8 +69,11 @@ export class FileAnalyser {
                 f["ToAccount"] == undefined ||
                 f["Narrative"] == undefined ||
                 f["Amount"] == undefined) throw null;
+                var the_date:string = f["Date"].split("T")[0];
+                var elements:string[] = the_date.split("-");
+                the_date = elements[2]+"/"+elements[1]+"/"+elements[0];
                 this.transactions.push(new Transaction(
-                    f["Date"],
+                    the_date,
                     f["FromAccount"],
                     f["ToAccount"],
                     f["Narrative"],
@@ -78,6 +81,35 @@ export class FileAnalyser {
                 ));
             }
             catch(exception) {
+                console.log("Invalid data entry");
+            }
+        });
+    }
+
+    getTransactionsXML(transactions:Object[]){
+        transactions.forEach(t => {
+            try{
+                //unix epoch is seconds since 1970
+                var days_since_1900:number = parseInt(t.$.Date);
+                var oadate = (new Date("1899-12-30")).getTime();
+                var myDate = new Date(oadate + days_since_1900*24*60*60*1000);
+
+                var date:string = (myDate.getDate()<10?"0":"")+myDate.getDate()+"/"+
+                (myDate.getMonth()<10?"0":"")+myDate.getMonth()+"/"+
+                myDate.getFullYear();
+                var party_from:string = t.Parties[0].From[0];
+                var party_to:string = t.Parties[0].To[0];
+                var description:string = t.Description[0];
+                var value:number = parseFloat(t.Value[0]);
+                
+                this.transactions.push(new Transaction(
+                    date,
+                    party_from,
+                    party_to,
+                    description,
+                    value
+                ));
+            } catch(exception){
                 console.log("Invalid data entry");
             }
         });

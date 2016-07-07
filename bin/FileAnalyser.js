@@ -63,7 +63,32 @@ var FileAnalyser = (function () {
                     f["Narrative"] == undefined ||
                     f["Amount"] == undefined)
                     throw null;
-                _this.transactions.push(new Transaction_1.Transaction(f["Date"], f["FromAccount"], f["ToAccount"], f["Narrative"], f["Amount"]));
+                var the_date = f["Date"].split("T")[0];
+                var elements = the_date.split("-");
+                the_date = elements[2] + "/" + elements[1] + "/" + elements[0];
+                _this.transactions.push(new Transaction_1.Transaction(the_date, f["FromAccount"], f["ToAccount"], f["Narrative"], f["Amount"]));
+            }
+            catch (exception) {
+                console.log("Invalid data entry");
+            }
+        });
+    };
+    FileAnalyser.prototype.getTransactionsXML = function (transactions) {
+        var _this = this;
+        transactions.forEach(function (t) {
+            try {
+                //unix epoch is seconds since 1970
+                var days_since_1900 = parseInt(t.$.Date);
+                var oadate = (new Date("1899-12-30")).getTime();
+                var myDate = new Date(oadate + days_since_1900 * 24 * 60 * 60 * 1000);
+                var date = (myDate.getDate() < 10 ? "0" : "") + myDate.getDate() + "/" +
+                    (myDate.getMonth() < 10 ? "0" : "") + myDate.getMonth() + "/" +
+                    myDate.getFullYear();
+                var party_from = t.Parties[0].From[0];
+                var party_to = t.Parties[0].To[0];
+                var description = t.Description[0];
+                var value = parseFloat(t.Value[0]);
+                _this.transactions.push(new Transaction_1.Transaction(date, party_from, party_to, description, value));
             }
             catch (exception) {
                 console.log("Invalid data entry");

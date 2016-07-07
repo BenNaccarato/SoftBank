@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts" />
 
 import * as readline from 'readline';
+import * as xml2js from 'xml2js';
 import { FileAnalyser } from './FileAnalyser';
 
 var filename:string;
@@ -13,18 +14,27 @@ var rl = readline.createInterface(process.stdin, process.stdout);
 rl.question('Filename to read: ', input => {
         filename = input;
         fileType = filename.split(".")[1];
-        //interprets the file depending on its type
+        //reads the file (as text)
+        try{
+            var fs = require('fs');
+            var the_file = fs.readFileSync(filename,'utf8');
+        } catch(exception) {
+            console.log("Failed to read the file. Exiting now");
+            quit();
+        }
+        console.log("File successfully read, extracting transactions...");
+        //analyses the file (depending on type)
         switch(fileType){
             case "json":
-                readJSON(filename);
+                readJSON(the_file);
                 break;
             case "xml":
-                readXML(filename);
+                readXML(the_file);
                 break;
             default:
-                readCSV(filename);
+                readCSV(the_file);
         }
-    console.log("File successfully read");
+        console.log("Transactions obtained");
         
     //Get the desired instruction
     rl.question('Input command: ', command => {
@@ -46,29 +56,23 @@ rl.question('Filename to read: ', input => {
 });
 
 
-function readCSV(filename:string){
-    try{
-        var fs = require('fs');
-        var the_file = fs.readFileSync(filename,{ encoding: 'utf8' });
-        analyser.getTransactionsCSV(the_file);
-    } catch(exception) {
-        console.log("Failed to read the file. Exiting now");
-        quit();
-    }
+function readCSV(the_file:string){
+    analyser.getTransactionsCSV(the_file);
 }
-function readJSON(filename:string){
+function readJSON(the_file:string){
     try{
-        var fs = require('fs');
-        var the_file = fs.readFileSync(filename,{ encoding: 'utf8' });
         var the_objects:Object[] = JSON.parse(the_file);
         analyser.getTransactionsJSON(the_objects);
     } catch(exception) {
-        console.log("Failed to read the file. Exiting now");
+        console.log("Failed to interpret the file. Exiting now");
         quit();
     }
 }
-function readXML(filename:string){
-    
+function readXML(file:string){
+    var parser = new xml2js.Parser();
+    parser.parseString(file, (err: any, result: any) => {
+        analyser.getTransactionsXML(result.TransactionList.SupportTransaction);
+    });
 }
 
 function quit() {
